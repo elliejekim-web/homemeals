@@ -236,9 +236,7 @@ export default async function AdminDashboard(props: {
       {/* 4. 핵심 통계 Card */}
       <DashboardStats
         peopleAtHome={homeMembers.length}
-        homeNames={homeNames}
         massCount={massMembers.length}
-        massNames={massNames}
         today={selectedDate}
       />
 
