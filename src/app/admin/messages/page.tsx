@@ -65,7 +65,7 @@ export default async function AdminMessagesPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {messages.map((message) => (
+          {messages?.map((message) => (
             <Card key={message.id}>
               <div className="flex items-start justify-between">
                 <div>
