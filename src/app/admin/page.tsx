@@ -15,13 +15,13 @@ function getLiturgicalBadgeStyle(color?: string) {
   return 'bg-gray-100 text-gray-800 border-gray-200';
 }
 
-export default async function AdminDashboard({
-  searchParams,
-}: {
-  searchParams: Promise<{ date?: string }>;
+type SearchParams = Promise<{ date?: string }>;
+
+export default async function AdminDashboard(props: {
+  searchParams: SearchParams;
 }) {
   const supabase = await createClient();
-  const params = await searchParams;
+  const params = await props.searchParams;
 
   // 서울 기준 오늘 날짜
   const today = new Intl.DateTimeFormat('en-CA', {
@@ -36,7 +36,7 @@ export default async function AdminDashboard({
     .select('id, display_name, full_name');
 
   // 2. 선택된 날짜의 스케줄 조회
-  const { data: schedules, error } = await supabase
+  const { data: rawSchedules, error } = await supabase
     .from('daily_schedule')
     .select(`
       id,
@@ -54,6 +54,17 @@ export default async function AdminDashboard({
     .eq('date', selectedDate);
 
   if (error) console.error('Dashboard error:', error);
+
+  // ----------------------------------------------------
+  // schedules 데이터 정규화 (users가 배열/객체 상관없이 단일 객체로 통일)
+  // ----------------------------------------------------
+  const schedules = (rawSchedules ?? []).map((s) => {
+    const userObj = Array.isArray(s.users) ? s.users[0] : s.users;
+    return {
+      ...s,
+      users: userObj ?? null,
+    };
+  });
 
   // 3. 휴가 목록 조회
   const { data: vacations } = await supabase
@@ -85,13 +96,12 @@ export default async function AdminDashboard({
   );
 
   // (2) 스케줄 Lookup Map (User ID -> Schedule)
-  type ScheduleItem = (typeof schedules) extends (infer T)[] ? T : never;
-  const scheduleMap = new Map<string, ScheduleItem>();
+  type NormalizedSchedule = (typeof schedules)[number];
+  const scheduleMap = new Map<string, NormalizedSchedule>();
 
-  (schedules ?? []).forEach((s) => {
-    const userId = Array.isArray(s.users) ? s.users[0]?.id : s.users?.id;
-    if (userId) {
-      scheduleMap.set(userId, s);
+  schedules.forEach((s) => {
+    if (s.users?.id) {
+      scheduleMap.set(s.users.id, s);
     }
   });
 
@@ -122,10 +132,9 @@ export default async function AdminDashboard({
             Community schedule & attendance overview
           </p>
         </div>
-
       </header>
 
-      {/* 2. 읽지 않은 메시지 Alert 배너 (있을 때만 표시) */}
+      {/* 2. 읽지 않은 메시지 Alert 배너 */}
       {!!unreadCount && unreadCount > 0 && (
         <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-3">
@@ -145,7 +154,7 @@ export default async function AdminDashboard({
 
       {/* 3. Bento Grid: 전례력 + 날짜 컨트롤 */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: 전례력 Card (2 Columns) */}
+        {/* Left: 전례력 Card */}
         {feast ? (
           <div className="lg:col-span-2 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col justify-between">
             <div>
@@ -191,7 +200,7 @@ export default async function AdminDashboard({
           </div>
         )}
 
-        {/* Right: 날짜 선택 Control Card (1 Column) */}
+        {/* Right: 날짜 선택 Control Card */}
         <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm flex flex-col justify-between space-y-4">
           <div>
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
@@ -243,12 +252,9 @@ export default async function AdminDashboard({
             </p>
           </div>
 
-          {/* 오늘 전체 식사 신청 총 인원 (중복 없는 통계) */}
           <span className="text-xs font-semibold px-3 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-200">
             Total Meal Registrations: {
-              (schedules ?? []).filter(
-                s => s.breakfast || s.lunch || s.dinner
-              ).length
+              schedules.filter(s => s.breakfast || s.lunch || s.dinner).length
             }
           </span>
         </div>
@@ -258,19 +264,19 @@ export default async function AdminDashboard({
             title="Breakfast"
             icon="🍳"
             meal="breakfast"
-            schedules={schedules ?? []}
+            schedules={schedules}
           />
           <MealMemberList
             title="Lunch"
             icon="🥪"
             meal="lunch"
-            schedules={schedules ?? []}
+            schedules={schedules}
           />
           <MealMemberList
             title="Dinner"
             icon="🍛"
             meal="dinner"
-            schedules={schedules ?? []}
+            schedules={schedules}
           />
         </div>
       </section>
@@ -282,7 +288,7 @@ export default async function AdminDashboard({
             All Members for {selectedDate}
           </h2>
         </div>
-        <MemberList schedules={schedules ?? []} />
+        <MemberList schedules={schedules} />
       </section>
     </div>
   );
