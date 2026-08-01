@@ -13,7 +13,7 @@ export interface ScheduleItem {
   breakfast?: boolean;
   lunch?: boolean;
   dinner?: boolean;
-  users?: User | User[];
+  users?: User | null;
 }
 
 type Props = {
