@@ -9,20 +9,11 @@ export async function downloadMealReport(
 ) {
   const supabase = await createClient();
 
-  const startDate =
-    `${year}-${String(month).padStart(2, "0")}-01`;
+  const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+  const lastDay = new Date(year, month, 0).getDate();
+  const endDate = `${year}-${String(month).padStart(2, "0")}-${lastDay}`;
 
-  const lastDay =
-    new Date(year, month, 0).getDate();
-
-  const endDate =
-    `${year}-${String(month).padStart(2, "0")}-${lastDay}`;
-
-
-  const {
-    data,
-    error
-  } = await supabase
+  const { data, error } = await supabase
     .from("daily_schedule")
     .select(`
       date,
@@ -38,63 +29,36 @@ export async function downloadMealReport(
     .lte("date", endDate)
     .order("date");
 
-
-  if(error){
+  if (error) {
     throw error;
   }
 
+  const rows = (data ?? []).map((item) => {
+    // 💡 users가 배열 형태일 수도, 단일 객체일 수도 있으므로 안전하게 추출
+    const userObj = Array.isArray(item.users) ? item.users[0] : item.users;
 
-  const rows = (data ?? []).map(
-    item => ({
+    return {
       Date: item.date,
+      Name: userObj?.display_name ?? "",
+      Mass: item.mass ? "YES" : "NO",
+      Breakfast: item.breakfast,
+      Lunch: item.lunch,
+      Dinner: item.dinner,
+    };
+  });
 
-      Name:
-        item.users?.display_name
-        ?? "",
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
 
-      Mass:
-        item.mass
-        ? "YES"
-        : "NO",
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Meal Report");
 
-      Breakfast:
-        item.breakfast,
-
-      Lunch:
-        item.lunch,
-
-      Dinner:
-        item.dinner
-    })
-  );
-
-
-  const worksheet =
-    XLSX.utils.json_to_sheet(rows);
-
-
-  const workbook =
-    XLSX.utils.book_new();
-
-
-  XLSX.utils.book_append_sheet(
-    workbook,
-    worksheet,
-    "Meal Report"
-  );
-
-
- const buffer = XLSX.write(
-  workbook,
-  {
+  const buffer = XLSX.write(workbook, {
     type: "buffer",
     bookType: "xlsx",
-  }
-);
+  });
 
-return {
-  filename: `meal-report-${year}-${month}.xlsx`,
-  file: buffer.toString("base64"),
-};
-
+  return {
+    filename: `meal-report-${year}-${month}.xlsx`,
+    file: buffer.toString("base64"),
+  };
 }
