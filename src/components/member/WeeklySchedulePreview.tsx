@@ -22,147 +22,107 @@ type Props = {
   schedules: DaySchedule[];
 };
 
-function getMealConfig(value: MealOption) {
+// 밝고 상큼한 파스텔 톤 배지 (Bright & Fresh Theme)
+function MealBadge({ value }: { value: MealOption }) {
   switch (value) {
     case 'EARLY':
-      return { label: 'Early', style: 'bg-amber-50 text-amber-700 border-amber-200/60' };
+      return (
+        <span className="inline-block px-2.5 py-0.5 text-xs font-bold rounded-md bg-amber-50 text-amber-600 ring-1 ring-amber-200/60">
+          Early
+        </span>
+      );
     case 'LATE':
-      return { label: 'Late', style: 'bg-indigo-50 text-indigo-700 border-indigo-200/60' };
+      return (
+        <span className="inline-block px-2.5 py-0.5 text-xs font-bold rounded-md bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200/60">
+          Late
+        </span>
+      );
     case 'NORMAL':
-      return { label: 'Normal', style: 'bg-emerald-50 text-emerald-700 border-emerald-200/60' };
+      return (
+        <span className="inline-block px-2.5 py-0.5 text-xs font-semibold rounded-md bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200/60">
+          Normal
+        </span>
+      );
     case 'NONE':
     default:
-      return { label: 'Skip', style: 'bg-gray-100 text-gray-400 border-transparent' };
+      return <span className="text-xs font-normal text-slate-300">Skip</span>;
   }
-}
-
-function MealBadge({ value }: { value: MealOption }) {
-  const { label, style } = getMealConfig(value);
-
-  return (
-    <span
-      className={`inline-flex items-center justify-center min-w-[62px] px-2.5 py-1 text-xs font-semibold rounded-lg border transition-all ${style}`}
-    >
-      {label}
-    </span>
-  );
 }
 
 export default function WeeklySchedulePreview({ schedules }: Props) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 bg-white">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">📅</span>
-          <h2 className="text-base font-bold text-gray-900">This Week's Schedule</h2>
-        </div>
+    <div className="w-full overflow-x-auto">
+      <table className="w-full text-left border-collapse">
+        <thead>
+          <tr className="border-b border-slate-100 text-slate-400 font-semibold text-xs">
+            <th scope="col" className="pb-2.5 px-2">Day</th>
+            <th scope="col" className="pb-2.5 px-1 text-center">Mass</th>
+            <th scope="col" className="pb-2.5 px-1 text-center">Breakfast</th>
+            <th scope="col" className="pb-2.5 px-1 text-center">Lunch</th>
+            <th scope="col" className="pb-2.5 px-1 text-center">Dinner</th>
+          </tr>
+        </thead>
 
-        <Link
-          href="/member/schedule"
-          className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100/70 px-3 py-1.5 rounded-lg transition-colors"
-        >
-          <span>Edit</span>
-          <span>&rarr;</span>
-        </Link>
-      </div>
+        <tbody className="divide-y divide-slate-100/70">
+          {schedules.map((item) => {
+            const [, month, day] = item.date.split('-');
 
-      {/* Table Content */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs text-gray-600 border-collapse">
-          <thead>
-            <tr className="bg-gray-50/70 border-b border-gray-100 text-gray-400 uppercase tracking-wider font-semibold text-[11px]">
-              <th scope="col" className="py-3 px-4 w-44">Day</th>
-              <th scope="col" className="py-3 px-2 text-center w-16">Mass</th>
-              <th scope="col" className="py-3 px-2 text-center">🍳 Breakfast</th>
-              <th scope="col" className="py-3 px-2 text-center">🥪 Lunch</th>
-              <th scope="col" className="py-3 px-2 text-center">🍛 Dinner</th>
-            </tr>
-          </thead>
+            return (
+              <tr
+                key={item.date}
+                className={`transition-colors ${
+                  item.isToday ? 'bg-sky-50/60' : 'hover:bg-slate-50/50'
+                }`}
+              >
+                {/* 요일 / 날짜 / 이벤트 */}
+                <td className="py-3 px-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-sm font-bold ${item.isToday ? 'text-sky-600' : 'text-slate-800'}`}>
+                      {item.dayName.slice(0, 3)}
+                    </span>
+                    <span className="text-xs font-medium text-slate-400">
+                      {month}.{day}
+                    </span>
 
-          <tbody className="divide-y divide-gray-100">
-            {schedules.map((item) => {
-              const [, month, day] = item.date.split('-');
-              const formattedDate = `${month}.${day}`;
-
-              return (
-                <tr
-                  key={item.date}
-                  className={`transition-colors hover:bg-gray-50/50 ${
-                    item.isToday ? 'bg-blue-50/30' : ''
-                  }`}
-                >
-                  {/* Date, Day & Events */}
-                  <td className="py-3.5 px-4">
-                    <div className="flex items-baseline gap-1.5">
-                      <span className={`font-bold text-sm ${item.isToday ? 'text-blue-600' : 'text-gray-900'}`}>
-                        {item.dayName.slice(0, 3)}
-                      </span>
-                      <span className="text-[11px] text-gray-400 font-medium">
-                        {formattedDate}
-                      </span>
-                      {item.isToday && (
-                        <span className="ml-1 text-[10px] font-bold text-blue-600 bg-blue-100/80 px-1.5 py-0.5 rounded">
-                          Today
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Events Container */}
-                    <div className="mt-1 space-y-0.5">
-                      {/* 전례력 (Feast) */}
-                      {item.feast && (
-                        <p
-                          className="text-[11px] text-purple-600 font-medium truncate max-w-[150px] flex items-center gap-1"
-                          title={item.feast}
-                        >
-                          <span>✨</span>
-                          <span className="truncate">{item.feast}</span>
-                        </p>
-                      )}
-
-                      {/* 가족 이벤트 (Family Event) */}
-                      {item.familyEvent && (
-                        <p
-                          className="text-[11px] text-rose-600 font-semibold truncate max-w-[150px] flex items-center gap-1"
-                          title={`${item.familyEvent.title}${item.familyEvent.note ? ` (${item.familyEvent.note})` : ''}`}
-                        >
-                          <span>🎉</span>
-                          <span className="truncate">{item.familyEvent.title}</span>
-                        </p>
-                      )}
-                    </div>
-                  </td>
-
-                  {/* Mass Status */}
-                  <td className="py-3.5 px-2 text-center">
-                    {item.mass ? (
-                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100/60 text-emerald-700 font-bold text-xs">
-                        ✓
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 text-gray-300 font-normal text-xs">
-                        -
+                    {item.isToday && (
+                      <span className="text-[10px] font-bold text-sky-600 bg-sky-100/80 px-1.5 py-0.2 rounded">
+                        Today
                       </span>
                     )}
-                  </td>
+                  </div>
 
-                  {/* Meals */}
-                  <td className="py-3.5 px-2 text-center">
-                    <MealBadge value={item.breakfast} />
-                  </td>
-                  <td className="py-3.5 px-2 text-center">
-                    <MealBadge value={item.lunch} />
-                  </td>
-                  <td className="py-3.5 px-2 text-center">
-                    <MealBadge value={item.dinner} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                  {/* 이벤트 (밝고 또렷한 핑크/보라 톤) */}
+                  {(item.feast || item.familyEvent) && (
+                    <div className="mt-0.5 text-[11px] font-semibold text-violet-500 truncate max-w-[140px]">
+                      {item.feast || item.familyEvent?.title}
+                    </div>
+                  )}
+                </td>
+
+                {/* 미사 여부 (화사한 민트 그린) */}
+                <td className="py-3 px-1 text-center">
+                  {item.mass ? (
+                    <span className="text-sm font-bold text-teal-500">✓</span>
+                  ) : (
+                    <span className="text-sm text-slate-300">—</span>
+                  )}
+                </td>
+
+                {/* 식사 현황 */}
+                <td className="py-3 px-1 text-center">
+                  <MealBadge value={item.breakfast} />
+                </td>
+                <td className="py-3 px-1 text-center">
+                  <MealBadge value={item.lunch} />
+                </td>
+                <td className="py-3 px-1 text-center">
+                  <MealBadge value={item.dinner} />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
