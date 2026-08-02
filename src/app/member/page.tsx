@@ -3,7 +3,7 @@ import MemberDashboard from "@/components/member/MemberDashboard";
 
 export const dynamic = "force-dynamic";
 
-// 서울 기준 날짜 포맷터 헬퍼
+// 서울 기준 날짜 포맷터
 function getSeoulDateString(date: Date = new Date()): string {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
@@ -23,7 +23,9 @@ export default async function MemberPage() {
       <div className="flex min-h-[60vh] flex-col items-center justify-center p-6 text-center">
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-xs max-w-sm w-full space-y-4">
           <span className="text-4xl">🔒</span>
-          <h2 className="text-lg font-bold text-gray-900">Authentication Required</h2>
+          <h2 className="text-lg font-bold text-gray-900">
+            Authentication Required
+          </h2>
           <p className="text-xs text-gray-500">
             Please log in to access your personal meal schedule and community roster.
           </p>
@@ -32,77 +34,241 @@ export default async function MemberPage() {
     );
   }
 
-  // 2. 서울 기준 오늘 날짜 계산
+  // 2. 서울 기준 오늘 날짜
   const today = getSeoulDateString();
 
-  // 3. 이번 주 월요일 ~ 일요일 날짜 배열 생성 (서울 시간 기준 안전한 연산)
+  // 3. 이번 주 날짜 생성 (월~일)
   const [year, month, dayStr] = today.split("-").map(Number);
-  const currentDate = new Date(Date.UTC(year, month - 1, dayStr));
-  
-  // getUTCDay: 0(일), 1(월), ..., 6(토)
-  const dayOfWeek = currentDate.getUTCDay(); 
-  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+
+  const currentDate = new Date(
+    Date.UTC(year, month - 1, dayStr)
+  );
+
+  const dayOfWeek = currentDate.getUTCDay();
+
+  const diffToMonday =
+    dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
 
   const dates: string[] = [];
+
   for (let i = 0; i < 7; i++) {
     const d = new Date(currentDate);
-    d.setUTCDate(currentDate.getUTCDate() + diffToMonday + i);
-    dates.push(d.toISOString().split("T")[0]);
+
+    d.setUTCDate(
+      currentDate.getUTCDate() +
+        diffToMonday +
+        i
+    );
+
+    dates.push(
+      d.toISOString().split("T")[0]
+    );
   }
 
-  // 4. DB 쿼리 병렬 처리 (Promise.all)
-  const [defaultsRes, dailyRes, feastsRes] = await Promise.all([
+
+  // 4. DB 조회
+  const [
+    defaultsRes,
+    dailyRes,
+    feastsRes,
+    familyRes,
+  ] = await Promise.all([
+
+    // weekly default
     supabase
       .from("weekly_defaults")
       .select("*")
       .eq("user_id", user.id),
+
+
+    // daily schedule
     supabase
       .from("daily_schedule")
       .select("*")
       .eq("user_id", user.id)
       .in("date", dates),
+
+
+    // liturgical calendar
     supabase
       .from("liturgical_calendar")
       .select("date, title")
       .in("date", dates),
+
+
+    // family calendar
+    supabase
+      .from("family_calendar")
+      .select(
+        "month, day, title, category, note"
+      ),
+
   ]);
 
-  const defaults = defaultsRes.data ?? [];
-  const daily = dailyRes.data ?? [];
-  const feasts = feastsRes.data ?? [];
 
-  // 5. O(1) Lookups을 위한 Lookup Maps 생성
-  const defaultMap = new Map(defaults.map((item) => [item.day_of_week?.toUpperCase(), item]));
-  const dailyMap = new Map(daily.map((item) => [item.date, item]));
-  const feastMap = new Map(feasts.map((item) => [item.date, item]));
+  const defaults =
+    defaultsRes.data ?? [];
 
-  // 6. 스케줄 통합 데이터 가공
+  const daily =
+    dailyRes.data ?? [];
+
+  const feasts =
+    feastsRes.data ?? [];
+
+  const familyEvents =
+    familyRes.data ?? [];
+
+
+  // 5. Lookup Maps
+
+  const defaultMap = new Map(
+    defaults.map((item) => [
+      item.day_of_week?.toUpperCase(),
+      item,
+    ])
+  );
+
+
+  const dailyMap = new Map(
+    daily.map((item) => [
+      item.date,
+      item,
+    ])
+  );
+
+
+  const feastMap = new Map(
+    feasts.map((item) => [
+      item.date,
+      item,
+    ])
+  );
+
+
+  // month-day key
+  const familyMap = new Map(
+    familyEvents.map((item) => [
+      `${item.month}-${item.day}`,
+      item,
+    ])
+  );
+
+
+  // 6. Schedule 데이터 생성
+
   const schedules = dates.map((date) => {
-    const dailyItem = dailyMap.get(date);
-    const feastItem = feastMap.get(date);
 
-    // 날짜의 요일명 (예: "MONDAY")
-    const [y, m, d] = date.split("-").map(Number);
-    const utcDate = new Date(Date.UTC(y, m - 1, d));
-    const weekday = new Intl.DateTimeFormat("en-US", {
-      weekday: "long",
-      timeZone: "UTC",
-    })
-      .format(utcDate)
-      .toUpperCase();
+    const dailyItem =
+      dailyMap.get(date);
 
-    const defaultItem = defaultMap.get(weekday);
+
+    const feastItem =
+      feastMap.get(date);
+
+
+    const [
+      y,
+      m,
+      d,
+    ] = date.split("-").map(Number);
+
+
+    const utcDate =
+      new Date(
+        Date.UTC(
+          y,
+          m - 1,
+          d
+        )
+      );
+
+
+    const weekday =
+      new Intl.DateTimeFormat(
+        "en-US",
+        {
+          weekday: "long",
+          timeZone: "UTC",
+        }
+      )
+        .format(utcDate)
+        .toUpperCase();
+
+
+
+    const defaultItem =
+      defaultMap.get(weekday);
+
+
+
+    const familyEvent =
+      familyMap.get(
+        `${m}-${d}`
+      );
+
+
 
     return {
+
       date,
+
       dayName: weekday,
-      feast: feastItem?.title,
-      mass: dailyItem?.mass ?? defaultItem?.mass ?? true,
-      breakfast: dailyItem?.breakfast ?? defaultItem?.breakfast ?? "NORMAL",
-      lunch: dailyItem?.lunch ?? defaultItem?.lunch ?? "NORMAL",
-      dinner: dailyItem?.dinner ?? defaultItem?.dinner ?? "NORMAL",
+
+
+      // 전례력
+      feast:
+        feastItem?.title ?? null,
+
+
+      // 가족 이벤트
+      familyEvent:
+        familyEvent
+          ? {
+              title:
+                familyEvent.title,
+
+              category:
+                familyEvent.category,
+
+              note:
+                familyEvent.note,
+            }
+          : null,
+
+
+      mass:
+        dailyItem?.mass ??
+        defaultItem?.mass ??
+        true,
+
+
+      breakfast:
+        dailyItem?.breakfast ??
+        defaultItem?.breakfast ??
+        "NORMAL",
+
+
+      lunch:
+        dailyItem?.lunch ??
+        defaultItem?.lunch ??
+        "NORMAL",
+
+
+      dinner:
+        dailyItem?.dinner ??
+        defaultItem?.dinner ??
+        "NORMAL",
+
     };
+
   });
 
-  return <MemberDashboard today={today} schedules={schedules} />;
+
+
+  return (
+    <MemberDashboard
+      today={today}
+      schedules={schedules}
+    />
+  );
 }

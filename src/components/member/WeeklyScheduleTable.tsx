@@ -6,6 +6,11 @@ type DaySchedule = {
   date: string;       // "2026-07-27"
   dayName: string;    // "MONDAY"
   feast?: string;
+  familyEvent?: {
+    title: string;
+    category?: string;
+    note?: string;
+  } | null;
   vacation?: boolean;
   mass: boolean;
   breakfast: MealOption;
@@ -45,12 +50,12 @@ export default function WeeklyScheduleTable({ schedules, onChange }: Props) {
   return (
     <div className="rounded-2xl border border-gray-200/80 bg-white shadow-2xs overflow-hidden">
       
-      {/* 1. Desktop View: hidden md:block (모바일에서는 숨김 처리) */}
+      {/* 1. Desktop View */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="bg-gray-50/80 text-xs font-bold text-gray-500 uppercase border-b border-gray-200/80">
             <tr>
-              <th className="p-4">Date</th>
+              <th className="p-4 w-52">Date</th>
               <th className="p-4 text-center">Mass</th>
               <th className="p-4 text-center">Breakfast</th>
               <th className="p-4 text-center">Lunch</th>
@@ -60,13 +65,43 @@ export default function WeeklyScheduleTable({ schedules, onChange }: Props) {
           <tbody className="divide-y divide-gray-100">
             {schedules.map((item) => (
               <tr key={item.date} className="hover:bg-gray-50/50 transition-colors">
-                {/* 날짜/요일 - 여기서 깔끔하게 1번만 조합하여 출력 */}
+                {/* Date & Event Metadata */}
                 <td className="p-4">
-                  <div className="font-bold text-gray-900">
-                    {item.dayName.charAt(0) + item.dayName.slice(1).toLowerCase()}
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-bold text-gray-900">
+                      {item.dayName.charAt(0) + item.dayName.slice(1).toLowerCase()}
+                    </span>
+                    <span className="text-xs font-medium text-gray-400">
+                      {formatMMDD(item.date)}
+                    </span>
+                    {item.vacation && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
+                        🌴 Vacation
+                      </span>
+                    )}
                   </div>
-                  <div className="text-xs font-medium text-gray-400">
-                    {formatMMDD(item.date)}
+
+                  {/* Feast & Family Event Indicators */}
+                  <div className="mt-1 space-y-0.5">
+                    {item.feast && (
+                      <p
+                        className="text-[11px] text-purple-600 font-medium truncate max-w-[180px] flex items-center gap-1"
+                        title={item.feast}
+                      >
+                        <span>✨</span>
+                        <span className="truncate">{item.feast}</span>
+                      </p>
+                    )}
+
+                    {item.familyEvent && (
+                      <p
+                        className="text-[11px] text-rose-600 font-semibold truncate max-w-[180px] flex items-center gap-1"
+                        title={`${item.familyEvent.title}${item.familyEvent.note ? ` (${item.familyEvent.note})` : ''}`}
+                      >
+                        <span>🎉</span>
+                        <span className="truncate">{item.familyEvent.title}</span>
+                      </p>
+                    )}
                   </div>
                 </td>
 
@@ -100,22 +135,43 @@ export default function WeeklyScheduleTable({ schedules, onChange }: Props) {
         </table>
       </div>
 
-      {/* 2. Mobile View: block md:hidden (데스크탑에서는 숨김 처리) */}
+      {/* 2. Mobile View */}
       <div className="block md:hidden divide-y divide-gray-100">
         {schedules.map((item) => (
           <div key={item.date} className="p-4 space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-              {/* 요일과 날짜를 1개의 flex 라인으로 단 1번만 깔끔하게 구성 */}
-              <div className="flex items-baseline gap-2">
-                <span className="font-bold text-base text-gray-900">
-                  {item.dayName.charAt(0) + item.dayName.slice(1).toLowerCase()}
-                </span>
-                <span className="text-xs font-medium text-gray-400">
-                  {formatMMDD(item.date)}
-                </span>
+            <div className="flex items-start justify-between pb-2 border-b border-gray-100">
+              <div className="space-y-1">
+                <div className="flex items-baseline gap-2">
+                  <span className="font-bold text-base text-gray-900">
+                    {item.dayName.charAt(0) + item.dayName.slice(1).toLowerCase()}
+                  </span>
+                  <span className="text-xs font-medium text-gray-400">
+                    {formatMMDD(item.date)}
+                  </span>
+                  {item.vacation && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200/60">
+                      🌴 Vacation
+                    </span>
+                  )}
+                </div>
+
+                {/* Mobile Events */}
+                {item.feast && (
+                  <p className="text-[11px] text-purple-600 font-medium truncate max-w-[200px] flex items-center gap-1">
+                    <span>✨</span>
+                    <span>{item.feast}</span>
+                  </p>
+                )}
+
+                {item.familyEvent && (
+                  <p className="text-[11px] text-rose-600 font-semibold truncate max-w-[200px] flex items-center gap-1">
+                    <span>🎉</span>
+                    <span>{item.familyEvent.title}</span>
+                  </p>
+                )}
               </div>
 
-              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200/60">
+              <label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-gray-700 bg-gray-50 px-2.5 py-1 rounded-lg border border-gray-200/60 shrink-0">
                 <span>Mass</span>
                 <input
                   type="checkbox"

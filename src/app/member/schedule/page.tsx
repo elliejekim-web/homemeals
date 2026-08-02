@@ -69,7 +69,7 @@ export default async function MemberSchedulePage({
   const weekDates = generateWeekDates(monday);
 
   // 3. Supabase DB 쿼리 병렬 처리 (Promise.all)
-  const [defaultsRes, dailyRes, feastsRes, vacationsRes] = await Promise.all([
+  const [defaultsRes, dailyRes, feastsRes, vacationsRes, familyRes] = await Promise.all([
     supabase
       .from("weekly_defaults")
       .select("*")
@@ -87,12 +87,20 @@ export default async function MemberSchedulePage({
       .from("vacations")
       .select("*")
       .eq("user_id", user.id),
+    // family calendar
+    supabase
+      .from("family_calendar")
+      .select(
+        "month, day, title, category, note"
+      ),
   ]);
 
   const weeklyDefaults = defaultsRes.data ?? [];
   const dailySchedules = dailyRes.data ?? [];
   const feasts = feastsRes.data ?? [];
   const vacations = vacationsRes.data ?? [];
+  const familyEvents =
+    familyRes.data ?? [];
 
   // 4. O(1) 조회를 위한 Lookup Map 구성
   const defaultMap = new Map(
@@ -100,7 +108,14 @@ export default async function MemberSchedulePage({
   );
   const dailyMap = new Map(dailySchedules.map((item) => [item.date, item]));
   const feastMap = new Map(feasts.map((item) => [item.date, item]));
-
+  
+  // month-day key
+  const familyMap = new Map(
+    familyEvents.map((item) => [
+      `${item.month}-${item.day}`,
+      item,
+    ])
+  );
   // 휴가 여부 체크 헬퍼
   const isVacationDay = (date: string) => {
     return vacations.some(
@@ -126,11 +141,31 @@ export default async function MemberSchedulePage({
     const defaultValue = defaultMap.get(weekday);
     const away = isVacationDay(date);
 
+    const familyEvent =
+      familyMap.get(
+        `${m}-${d}`
+      );
+
+
     return {
       date,
       dayName: weekday,
       feast: feast?.title,
       vacation: away,
+      // 가족 이벤트
+      familyEvent:
+        familyEvent
+          ? {
+              title:
+                familyEvent.title,
+
+              category:
+                familyEvent.category,
+
+              note:
+                familyEvent.note,
+            }
+          : null,
       mass: away
         ? false
         : daily?.mass ?? defaultValue?.mass ?? true,

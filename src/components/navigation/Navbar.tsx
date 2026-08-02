@@ -57,8 +57,8 @@ export default function Navbar({
               className="flex items-center gap-2 font-bold text-lg tracking-tight text-gray-900 hover:text-blue-600 transition-colors"
             >
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white font-black text-sm shadow-xs">
-                ⛪
-              </span>
+                🏠
+              </span> 
               <span className="truncate max-w-[180px] sm:max-w-none">{brandName}</span>
               {badgeText && (
                 <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 ring-1 ring-inset ring-blue-700/10">

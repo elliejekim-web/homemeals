@@ -25,7 +25,7 @@ export default async function MemberLayout({
   return (
     <div className="min-h-screen bg-gray-50/60 text-gray-900 antialiased">
       <Navbar
-        brandName="Saint Home Meals"
+        brandName="Sainthill Home"
         brandHref="/member"
         items={MEMBER_NAV_ITEMS}
         actionButton={

@@ -15,7 +15,7 @@ export default function MobileBottomNav() {
     ? [
         { label: 'Home', href: '/member', icon: '🏠' },
         { label: 'Schedule', href: '/member/schedule', icon: '📅' },
-        { label: 'Vacation', href: '/member/vacation', icon: '✈️' },
+        { label: 'Holidays', href: '/member/vacation', icon: '✈️' },
         { label: 'Messages', href: '/member/messages', icon: '✉️' },
       ]
     : [

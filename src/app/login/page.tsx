@@ -182,7 +182,7 @@ export default function LoginPage() {
           font-bold
           "
         >
-          Saint Home Meals
+          Sainthill Home
         </h1>
 
 

@@ -14,6 +14,12 @@ type DaySchedule = {
   date: string;
   dayName: string;
   feast?: string;
+  // 가족 이벤트 추가
+  familyEvent?: {
+    title: string;
+    category?: string;
+    note?: string;
+  } | null;
   vacation?: boolean;
   mass: boolean;
   breakfast: MealOption;

@@ -29,7 +29,7 @@ export default async function AdminLayout({
     .eq("key", "community_name")
     .single();
 
-  const communityName = setting?.value ?? "Saint Home Meals";
+  const communityName = setting?.value ?? "Sainthill Home";
 
   return (
     <div className="min-h-screen bg-gray-50/60 text-gray-900 antialiased">
