@@ -46,6 +46,8 @@ export default async function AdminDashboard(props: { searchParams: SearchParams
 
   if (error) console.error('Dashboard error:', error);
 
+  //console.log(rawSchedules);
+
   // 해당 날짜 스케줄이 없을 경우 자동 생성
   if (!error && (!rawSchedules || rawSchedules.length === 0) && users && users.length > 0) {
     const defaultSchedules = users.map((user) => ({
